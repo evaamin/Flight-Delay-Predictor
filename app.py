@@ -102,6 +102,8 @@ st.subheader(f"Airline Delay Rates at {labels[airport]}")
 
 fig = plot_delay_rates(summary)
 
+
+
 st.plotly_chart(fig, use_container_width=True)
 
 st.caption('General performance across airlines')
