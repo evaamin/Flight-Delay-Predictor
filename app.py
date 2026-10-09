@@ -8,11 +8,24 @@ import streamlit as st
 
 
 from carriers import MONTHS
-from packages.plot_data import *
-#from packages.plot_data import airline_delays, delay_rate, plot_delay_rates
-from packages.rank import (METRICS, MIN_FLIGHTS, airport_choices,
-                           filter_flights, month_number, rank, summarize)
 
+from packages.plot_data import (
+    airline_delays,
+    delay_rate,
+    plot_delay_rates,
+    plot_delay_causes,
+)
+
+from packages.rank import (
+    METRICS,
+    MIN_FLIGHTS,
+    airport_choices,
+    filter_flights,
+    month_number,
+    rank,
+    summarize,
+    cause_shares,
+)
 DATA = 'delays_by_airport_month.parquet'
 
 st.set_page_config(page_title='Flight Delay Predictor', layout='wide')
@@ -96,22 +109,27 @@ else:
 # ---- fleet-wide charts -----------------------------------------------------
 # These read the parquet directly, so they cover all airports regardless of the
 # filters above.
-st.subheader('Across all airports')
+st.subheader("Why are flights delayed?")
 
-st.subheader(f"Airline Delay Rates at {labels[airport]}")
+if month == "Any":
+    cause_data = filter_flights(
+        df,
+        airport,
+        month=None
+    )
+else:
+    cause_data = filter_flights(
+        df,
+        airport,
+        month_number(month),
+        include_regional=show_regional
+    )
 
-fig = plot_delay_rates(summary)
+cause_summary = summarize(cause_data)
 
-
-
-st.plotly_chart(fig, use_container_width=True)
-
-st.caption('General performance across airlines')
-fig1 = airline_delays()
-st.pyplot(fig1)
-
-st.caption('Delay rate across airlines')
-fig2 = delay_rate()
-st.pyplot(fig2)
-
-
+if not cause_summary.empty:
+    cause_shares_df = cause_shares(cause_summary)
+    fig_causes = plot_delay_causes(cause_shares_df)
+    st.plotly_chart(fig_causes, width="stretch")
+else:
+    st.info("No delay-cause data available for this selection.")
