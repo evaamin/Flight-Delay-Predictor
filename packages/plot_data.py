@@ -193,7 +193,7 @@ def plot_delay_causes(shares):
 
     return fig
 
-
+# adding a new function to plot delay causes for airlines
 def plot_delay_causes(shares):
     cause_data = shares.mean().reset_index()
     cause_data.columns = ["cause", "share"]
@@ -249,3 +249,42 @@ def yearly_airline_delays(summary):
 
   return fig
   
+
+
+def plot_airline_delay_causes(shares):
+    chart_data = (
+        shares
+        .reset_index()
+        .melt(
+            id_vars="carrier_label",
+            var_name="Delay Cause",
+            value_name="Share"
+        )
+    )
+
+    fig = px.bar(
+        chart_data,
+        x="Share",
+        y="carrier_label",
+        color="Delay Cause",
+        orientation="h",
+        title="Why Are Airlines Delayed?",
+        labels={
+            "carrier_label": "Airline",
+            "Share": "Share of Delay Causes"
+        }
+    )
+
+    fig.update_xaxes(
+        tickformat=".0%",
+        range=[0, 1]
+    )
+
+    fig.update_layout(
+        barmode="stack",
+        height=600,
+        yaxis={"autorange": "reversed"},
+        legend_title_text="Delay Cause"
+    )
+
+    return fig

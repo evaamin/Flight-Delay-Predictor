@@ -153,7 +153,8 @@ with mid_right_cell_1:
         cause_data = filter_flights(
             df,
             airport,
-            month=None
+            month=None,
+            include_regional=show_regional
         )
     else:
         cause_data = filter_flights(
@@ -171,3 +172,46 @@ with mid_right_cell_1:
         st.plotly_chart(fig_causes, width="stretch")
     else:
         st.info("No delay-cause data available for this selection.")
+
+
+# ---- delay causes by airline -----------------------------------------------
+
+st.subheader("How do delay causes differ by airline?")
+
+if month == "Any":
+    airline_cause_data = filter_flights(
+        df,
+        airport,
+        month=None,
+        include_regional=show_regional
+    )
+else:
+    airline_cause_data = filter_flights(
+        df,
+        airport,
+        month_number(month),
+        include_regional=show_regional
+    )
+
+airline_cause_summary = summarize(
+    airline_cause_data,
+    floor
+)
+
+if not airline_cause_summary.empty:
+    airline_cause_shares = cause_shares(
+        airline_cause_summary
+    )
+
+    fig_airline_causes = plot_airline_delay_causes(
+        airline_cause_shares
+    )
+
+    st.plotly_chart(
+        fig_airline_causes,
+        width="stretch"
+    )
+else:
+    st.info(
+        "No airline delay-cause data available for this selection."
+    )
