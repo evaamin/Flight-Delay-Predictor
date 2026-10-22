@@ -126,34 +126,136 @@ def plot_delay_causes(shares, mode='light'):
     fig.update_layout(bargap=0.42, margin=dict(r=70, t=8, b=8))
     return fig
 
-
 def yearly_airline_delays(summary, mode='light', top_n=5):
-    """Monthly 15+ min delays over the window, for the leading carriers in the
-    current ranking. Colour is keyed to the carrier, so it survives a re-rank."""
+    """Monthly delays for the top-ranked carriers."""
     p = theme.palette(mode)
 
     dated = df_delays.copy()
-    dated['date'] = pd.to_datetime(dated[['year', 'month']].assign(day=1))
-    monthly = (dated.groupby(['date', 'carrier_label'])[['del15']]
-                    .sum().reset_index())
+    dated['date'] = pd.to_datetime(
+        dated[['year', 'month']].assign(day=1)
+    )
 
-    chosen = [c for c in summary['carrier_label'][:top_n]
-              if not monthly[monthly.carrier_label == c].empty]
-    # Every line on screen gets its own hue: a carrier keeps its preferred slot
-    # where that slot is free, and takes the nearest free one where it is not.
-    colors = theme.assign_colors(chosen, theme.carrier_slots(df_delays), mode)
+    monthly = (
+        dated.groupby(['date', 'carrier_label'])[['del15']]
+        .sum()
+        .reset_index()
+    )
+
+    chosen = [
+        c for c in summary['carrier_label'][:top_n]
+        if not monthly[monthly.carrier_label == c].empty
+    ]
+
+    colors = theme.assign_colors(
+        chosen,
+        theme.carrier_slots(df_delays),
+        mode
+    )
 
     fig = go.Figure()
+
     for carrier in chosen:
         d = monthly[monthly.carrier_label == carrier]
-        fig.add_trace(go.Scatter(
-            x=d.date, y=d.del15, name=short_label(carrier), mode='lines',
-            line=dict(color=colors[carrier], width=2),
-            hovertemplate='%{y:,.0f} delays<extra>%{fullData.name}</extra>',
-        ))
+
+        fig.add_trace(
+            go.Scatter(
+                x=d.date,
+                y=d.del15,
+                name=short_label(carrier),
+                mode='lines',
+                line=dict(color=colors[carrier], width=2),
+                hovertemplate=(
+                    '%{y:,.0f} delays'
+                    '<extra>%{fullData.name}</extra>'
+                ),
+            )
+        )
+
     theme.apply_layout(fig, mode, height=330)
+
     fig.update_xaxes(showgrid=False, title=None)
-    fig.update_yaxes(showgrid=True, gridcolor=p['grid'], title=None,
-                     tickformat=',.0f')
-    fig.update_layout(hovermode='x unified', margin=dict(r=20, t=52, b=8))
+
+    fig.update_yaxes(
+        showgrid=True,
+        gridcolor=p['grid'],
+        title=None,
+        tickformat=',.0f'
+    )
+
+    fig.update_layout(
+        hovermode='x unified',
+        margin=dict(r=20, t=52, b=8)
+    )
+
+    return fig
+
+
+# ---------------------------------------------------------
+# Faezeh: Delay causes by airline
+# ---------------------------------------------------------
+
+def plot_airline_delay_causes(shares, mode='light'):
+    """Compare the percentage breakdown of delay causes by airline."""
+
+    chart_data = (
+        shares
+        .reset_index()
+        .melt(
+            id_vars='carrier_label',
+            var_name='Delay Cause',
+            value_name='Share'
+        )
+    )
+
+    cause_names = list(shares.columns)
+    colors = theme.series(mode)
+    color_map = {
+        cause: colors[i % len(colors)]
+        for i, cause in enumerate(cause_names)
+    }
+
+    fig = go.Figure()
+
+    for cause in cause_names:
+        d = chart_data[
+            chart_data['Delay Cause'] == cause
+        ]
+
+        fig.add_trace(
+            go.Bar(
+                x=d['Share'],
+                y=[short_label(c) for c in d['carrier_label']],
+                name=cause,
+                orientation='h',
+                marker_color=color_map[cause],
+                hovertemplate=(
+                    '<b>%{y}</b><br>'
+                    f'{cause}: '
+                    '%{x:.1%}'
+                    '<extra></extra>'
+                )
+            )
+        )
+
+    theme.apply_layout(
+        fig,
+        mode,
+        height=max(400, 40 * len(shares) + 120)
+    )
+
+    fig.update_layout(
+        barmode='stack',
+        yaxis={'autorange': 'reversed'},
+        legend_title_text='Delay Cause',
+        margin=dict(l=30, r=30, t=50, b=30)
+    )
+
+    fig.update_xaxes(
+        tickformat='.0%',
+        range=[0, 1],
+        title=None
+    )
+
+    fig.update_yaxes(title=None)
+
     return fig

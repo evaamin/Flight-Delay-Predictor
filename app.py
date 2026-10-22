@@ -10,8 +10,12 @@ import streamlit as st
 
 from carriers import MONTHS
 from packages import theme
-from packages.plot_data import (plot_delay_causes, plot_delay_rates,
-                                yearly_airline_delays)
+from packages.plot_data import (
+    plot_delay_causes,
+    plot_delay_rates,
+    yearly_airline_delays,
+    plot_airline_delay_causes,
+)
 from packages.rank import (METRICS, MIN_FLIGHTS, airport_choices, cause_shares,
                            filter_flights, month_number, rank, summarize)
 
@@ -159,9 +163,27 @@ st.dataframe(
         'top_cause': st.column_config.TextColumn('Most common cause'),
     })
 
+# ---- delay causes by airline ---------------------------------------------
+
 st.markdown(
-    '<p class="legend-note">Monthly totals, so this says nothing about day of '
-    'week or time of day. Arrivals only, by airport rather than by route. '
-    'Airline–airport pairs below the flight floor are hidden, because a handful '
-    'of flights produces an unstable rate.</p>',
-    unsafe_allow_html=True)
+    '<div class="section">How do delay causes differ by airline?</div>',
+    unsafe_allow_html=True
+)
+
+st.caption(
+    "Each bar shows the percentage breakdown of reported delay causes "
+    "for an airline. Each airline's bar totals 100%."
+)
+
+airline_cause_shares = cause_shares(summary)
+
+fig_airline_causes = plot_airline_delay_causes(
+    airline_cause_shares,
+    MODE
+)
+
+st.plotly_chart(
+    fig_airline_causes,
+    width="stretch",
+    config={"displayModeBar": False}
+)
