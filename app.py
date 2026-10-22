@@ -163,10 +163,6 @@ st.dataframe(
         'top_cause': st.column_config.TextColumn('Most common cause'),
     })
 
-top_right_cell = cols[1].container(
-    border=True, height='stretch'
-)
-
 # ---- delay causes by airline ---------------------------------------------
 
 st.markdown(
