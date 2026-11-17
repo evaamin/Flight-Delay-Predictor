@@ -10,7 +10,7 @@ import streamlit as st
 from packages.airport_map import airport_delay_map
 
 from carriers import MONTHS
-from packages import theme
+from packages import live_panel, theme
 from packages.plot_data import (plot_delay_causes, plot_delay_rates,
                                 yearly_airline_delays, month_delay_heatmap)
 from packages.rank import (METRICS, MIN_FLIGHTS, airport_choices, cause_shares,
@@ -132,7 +132,15 @@ with k4:
     kpi('Arrivals compared', f'{sub.flights.sum():,.0f}',
         f'{len(summary)} carriers over the floor of {floor:,}')
 
-tab1, tab2, tab3, tab4 = st.tabs(['Detail Charts', 'Table', 'Background Charts', 'Documentation'])
+live, tab1, tab2, tab3, tab4 = st.tabs(
+    ['Live Map', 'Detail Charts', 'Table', 'Background Charts',
+     'Documentation'])
+
+# ---- live traffic ---------------------------------------------------------
+with live:
+    # The whole panel is packages/live_panel.py: it is the only view in the app
+    # that reads a live feed, and it keeps its own refresh and cache.
+    live_panel.render(MODE)
 
 # ---- charts ---------------------------------------------------------------
 with tab1:
